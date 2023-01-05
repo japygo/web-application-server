@@ -1,5 +1,6 @@
 package util;
 
+import java.io.IOException;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -67,5 +68,24 @@ public class HttpRequestUtilsTest {
         String header = "Content-Length: 59";
         Pair pair = HttpRequestUtils.parseHeader(header);
         assertThat(pair).isEqualTo(new Pair("Content-Length", "59"));
+    }
+
+    @Test
+    public void getUrl() {
+        String line = "GET /index.html HTTP/1.1";
+        String url = HttpRequestUtils.getUrl(line);
+        assertThat(url).isEqualTo("/index.html");
+
+        line = "GET / HTTP/1.1";
+        url = HttpRequestUtils.getUrl(line);
+        assertThat(url).isEqualTo("/index.html");
+    }
+
+    @Test
+    public void getBody() throws IOException {
+        String url = "/index.html";
+        byte[] body = HttpRequestUtils.getBody(url);
+        assertThat(body.length).isEqualTo(10276);
+        assertThat(new String(body)).contains("SLiPP Java Web Programming");
     }
 }

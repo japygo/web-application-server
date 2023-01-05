@@ -1,5 +1,8 @@
 package util;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -105,5 +108,22 @@ public class HttpRequestUtils {
         public String toString() {
             return "Pair [key=" + key + ", value=" + value + "]";
         }
+    }
+
+    public static String getUrl(String line) {
+        String url = "/index.html";
+        if (line != null) {
+            String[] tokens = line.split(" ");
+            if (tokens.length == 3) {
+                if (!tokens[1].equals("/")) {
+                    url = tokens[1];
+                }
+            }
+        }
+        return url;
+    }
+
+    public static byte[] getBody(String url) throws IOException {
+        return Files.readAllBytes(new File("./webapp" + url).toPath());
     }
 }
