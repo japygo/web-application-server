@@ -1,8 +1,10 @@
 package util;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
+import model.User;
 import org.junit.jupiter.api.Test;
 import util.HttpRequestUtils.Pair;
 
@@ -87,5 +89,36 @@ public class HttpRequestUtilsTest {
         byte[] body = HttpRequestUtils.getBody(url);
         assertThat(body.length).isEqualTo(10276);
         assertThat(new String(body)).contains("SLiPP Java Web Programming");
+    }
+
+    @Test
+    public void isHtml() {
+        String url = "/index.html";
+        boolean isHtml = HttpRequestUtils.isHtml(url);
+        assertThat(isHtml).isTrue();
+
+        url = "/user/create";
+        isHtml = HttpRequestUtils.isHtml(url);
+        assertThat(isHtml).isFalse();
+    }
+
+    @Test
+    public void getParams() {
+        String url = "/user/create?userId=javajigi&password=password&name=JaeSung&email=javajigi%40slipp.net";
+        Map<String, String> params = HttpRequestUtils.getParams(url);
+        assertThat(params.get("userId")).isEqualTo("javajigi");
+        assertThat(params.get("password")).isEqualTo("password");
+        assertThat(params.get("name")).isEqualTo("JaeSung");
+        assertThat(params.get("email")).isEqualTo("javajigi%40slipp.net");
+    }
+
+    @Test
+    public void paramsToUser() {
+        Map<String, String> params = new HashMap<>();
+        params.put("userId", "javajigi");
+        params.put("password", "password");
+        User user = HttpRequestUtils.paramsToUser(params);
+        assertThat(user.getUserId()).isEqualTo("javajigi");
+        assertThat(user.getPassword()).isEqualTo("password");
     }
 }

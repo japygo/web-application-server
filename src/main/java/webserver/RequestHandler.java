@@ -3,14 +3,16 @@ package webserver;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import service.UserService;
 import util.HttpRequestUtils;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
+    private static final UserService userService = new UserService();
 
     private final Socket connection;
 
@@ -25,9 +27,24 @@ public class RequestHandler extends Thread {
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
             BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-            String url = HttpRequestUtils.getUrl(br.readLine());
+            String line = br.readLine();
+            log.debug("HTTP Header : {}", line);
+            String url = HttpRequestUtils.getUrl(line);
+            byte[] body = new byte[0];
+            if (HttpRequestUtils.isHtml(url)) {
+                body = HttpRequestUtils.getBody(url);
+            } else {
+                if (url.startsWith("/user/create")) {
+                    Map<String, String> params = HttpRequestUtils.getParams(url);
+                    boolean result = userService.createUser(HttpRequestUtils.paramsToUser(params));
+                    if (result) {
+                        body = "success".getBytes();
+                    } else {
+                        body = "fail".getBytes();
+                    }
+                }
+            }
             DataOutputStream dos = new DataOutputStream(out);
-            byte[] body = HttpRequestUtils.getBody(url);
             response200Header(dos, body.length);
             responseBody(dos, body);
         } catch (IOException e) {
