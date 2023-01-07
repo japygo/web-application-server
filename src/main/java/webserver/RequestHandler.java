@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.UserService;
 import util.HttpRequestUtils;
+import util.IOUtils;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -35,7 +36,22 @@ public class RequestHandler extends Thread {
                 body = HttpRequestUtils.getBody(url);
             } else {
                 if (url.startsWith("/user/create")) {
-                    Map<String, String> params = HttpRequestUtils.getParams(url);
+                    Map<String, String> params;
+                    if (line.startsWith("GET")) {
+                        params = HttpRequestUtils.getParams(url);
+                    } else {
+                        int contentLength = 0;
+                        while ((line = br.readLine()) != null) {
+                            log.debug(line);
+                            if (line.startsWith("Content-Length")) {
+                                contentLength = Integer.parseInt(HttpRequestUtils.parseHeader(line).getValue());
+                            }
+                            if (line.equals("")) {
+                                break;
+                            }
+                        }
+                        params = HttpRequestUtils.parseQueryString(IOUtils.readData(br, contentLength));
+                    }
                     boolean result = userService.createUser(HttpRequestUtils.paramsToUser(params));
                     if (result) {
                         body = "success".getBytes();
