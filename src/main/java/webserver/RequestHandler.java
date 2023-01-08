@@ -59,6 +59,32 @@ public class RequestHandler extends Thread {
                     DataOutputStream dos = new DataOutputStream(out);
                     response302Header(dos, body.length);
                     responseBody(dos, body);
+                } else if (url.startsWith("/user/login")) {
+                    Map<String, String> params;
+                    int contentLength = 0;
+                    while ((line = br.readLine()) != null) {
+                        if (line.startsWith("Content-Length")) {
+                            contentLength = Integer.parseInt(HttpRequestUtils.parseHeader(line).getValue());
+                        }
+                        if (line.equals("")) {
+                            break;
+                        }
+                    }
+                    params = HttpRequestUtils.parseQueryString(IOUtils.readData(br, contentLength));
+                    String userId = params.get("userId");
+                    String password = params.get("password");
+                    String cookie = "";
+                    boolean result = userService.loginUser(userId, password);
+                    if (result) {
+                        body = HttpRequestUtils.getBody("/index.html");
+                        cookie = "logined=true";
+                    } else {
+                        body = HttpRequestUtils.getBody("/user/login_failed.html");
+                        cookie = "logined=false";
+                    }
+                    DataOutputStream dos = new DataOutputStream(out);
+                    responseCookie(dos, body.length, cookie);
+                    responseBody(dos, body);
                 }
             }
         } catch (IOException e) {
@@ -92,6 +118,17 @@ public class RequestHandler extends Thread {
         try {
             dos.write(body, 0, body.length);
             dos.flush();
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void responseCookie(DataOutputStream dos, int lengthOfBodyContent, String cookie) {
+        try {
+            dos.writeBytes("HTTP/1.1 200 OK \r\n");
+            dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+            dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+            dos.writeBytes("Set-Cookie: " + cookie + "\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
         }

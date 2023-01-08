@@ -16,4 +16,14 @@ public class UserService {
         log.debug("Add user : {}", user);
         return true;
     }
+
+    public boolean loginUser(String userId, String password) {
+        User user = DataBase.findUserById(userId);
+        if (user != null) {
+            if (password.equals(user.getPassword())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
