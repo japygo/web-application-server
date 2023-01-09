@@ -5,6 +5,8 @@ import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
+
 public class UserService {
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
@@ -25,5 +27,9 @@ public class UserService {
             }
         }
         return false;
+    }
+
+    public Collection<User> getUsers() {
+        return DataBase.findAll();
     }
 }

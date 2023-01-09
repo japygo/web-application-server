@@ -3,6 +3,7 @@ package webserver;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -33,6 +34,11 @@ public class RequestHandler extends Thread {
             String url = HttpRequestUtils.getUrl(line);
             byte[] body;
             if (HttpRequestUtils.isHtml(url)) {
+                body = HttpRequestUtils.getBody(url);
+                DataOutputStream dos = new DataOutputStream(out);
+                response200Header(dos, body.length);
+                responseBody(dos, body);
+            } else if (url.endsWith(".css")) {
                 body = HttpRequestUtils.getBody(url);
                 DataOutputStream dos = new DataOutputStream(out);
                 response200Header(dos, body.length);
@@ -84,6 +90,40 @@ public class RequestHandler extends Thread {
                     }
                     DataOutputStream dos = new DataOutputStream(out);
                     responseCookie(dos, body.length, cookie);
+                    responseBody(dos, body);
+                } else if (url.startsWith("/user/list")) {
+                    Map<String, String> cookie = new HashMap<>();
+                    while ((line = br.readLine()) != null) {
+                        if (line.startsWith("Cookie")) {
+                            log.debug(line);
+                            cookie = HttpRequestUtils.parseCookies(HttpRequestUtils.parseHeader(line).getValue());
+                        }
+                        if (line.equals("")) {
+                            break;
+                        }
+                    }
+                    if (Boolean.parseBoolean(cookie.get("logined"))) {
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("<table>");
+                        sb.append("<tr>");
+                        sb.append("<th>아이디</th>");
+                        sb.append("<th>이름</th>");
+                        sb.append("<th>이메일</th>");
+                        sb.append("</tr>");
+                        userService.getUsers().forEach(user -> {
+                            sb.append("<tr>");
+                            sb.append("<td>").append(user.getUserId()).append("</td>");
+                            sb.append("<td>").append(user.getName()).append("</td>");
+                            sb.append("<td>").append(user.getName()).append("</td>");
+                            sb.append("</tr>");
+                        });
+                        sb.append("</table>");
+                        body = sb.toString().getBytes();
+                    } else {
+                        body = HttpRequestUtils.getBody("/user/login.html");
+                    }
+                    DataOutputStream dos = new DataOutputStream(out);
+                    response200Header(dos, body.length);
                     responseBody(dos, body);
                 }
             }
