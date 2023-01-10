@@ -38,10 +38,15 @@ public class RequestHandler extends Thread {
                 DataOutputStream dos = new DataOutputStream(out);
                 response200Header(dos, body.length);
                 responseBody(dos, body);
-            } else if (url.endsWith(".css")) {
+            } else if (url.endsWith(".js")) {
                 body = HttpRequestUtils.getBody(url);
                 DataOutputStream dos = new DataOutputStream(out);
                 response200Header(dos, body.length);
+                responseBody(dos, body);
+            } else if (url.endsWith(".css")) {
+                body = HttpRequestUtils.getBody(url);
+                DataOutputStream dos = new DataOutputStream(out);
+                responseCss(dos, body.length);
                 responseBody(dos, body);
             } else {
                 if (url.startsWith("/user/create")) {
@@ -169,6 +174,17 @@ public class RequestHandler extends Thread {
             dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
             dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
             dos.writeBytes("Set-Cookie: " + cookie + "\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void responseCss(DataOutputStream dos, int lengthOfBodyContent) {
+        try {
+            dos.writeBytes("HTTP/1.1 200 OK \r\n");
+            dos.writeBytes("Content-Type: text/css;charset=utf-8\r\n");
+            dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+            dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
         }
