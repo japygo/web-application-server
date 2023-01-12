@@ -1,16 +1,14 @@
 package webserver;
 
-import java.io.*;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.UserService;
 import util.HttpRequestUtils;
-import util.IOUtils;
+
+import java.io.*;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -30,108 +28,123 @@ public class RequestHandler extends Thread {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
             BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
             String line = br.readLine();
-            log.debug("HTTP Header : {}", line);
-            String url = HttpRequestUtils.getUrl(line);
-            byte[] body;
-            if (HttpRequestUtils.isHtml(url)) {
-                body = HttpRequestUtils.getBody(url);
-                DataOutputStream dos = new DataOutputStream(out);
-                response200Header(dos, body.length);
-                responseBody(dos, body);
-            } else if (url.endsWith(".js")) {
-                body = HttpRequestUtils.getBody(url);
-                DataOutputStream dos = new DataOutputStream(out);
-                response200Header(dos, body.length);
-                responseBody(dos, body);
-            } else if (url.endsWith(".css")) {
-                body = HttpRequestUtils.getBody(url);
-                DataOutputStream dos = new DataOutputStream(out);
-                responseCss(dos, body.length);
-                responseBody(dos, body);
-            } else {
-                if (url.startsWith("/user/create")) {
-                    Map<String, String> params;
-                    if (line.startsWith("GET")) {
-                        params = HttpRequestUtils.getParams(url);
-                    } else {
-                        int contentLength = 0;
-                        while ((line = br.readLine()) != null) {
-                            if (line.startsWith("Content-Length")) {
-                                contentLength = Integer.parseInt(HttpRequestUtils.parseHeader(line).getValue());
-                            }
-                            if (line.equals("")) {
-                                break;
-                            }
-                        }
-                        params = HttpRequestUtils.parseQueryString(IOUtils.readData(br, contentLength));
-                    }
-                    boolean result = userService.createUser(HttpRequestUtils.paramsToUser(params));
-                    body = HttpRequestUtils.getBody("/index.html");
-                    DataOutputStream dos = new DataOutputStream(out);
-                    response302Header(dos, body.length);
-                    responseBody(dos, body);
-                } else if (url.startsWith("/user/login")) {
-                    Map<String, String> params;
-                    int contentLength = 0;
-                    while ((line = br.readLine()) != null) {
-                        if (line.startsWith("Content-Length")) {
-                            contentLength = Integer.parseInt(HttpRequestUtils.parseHeader(line).getValue());
-                        }
-                        if (line.equals("")) {
-                            break;
-                        }
-                    }
-                    params = HttpRequestUtils.parseQueryString(IOUtils.readData(br, contentLength));
-                    String userId = params.get("userId");
-                    String password = params.get("password");
-                    String cookie = "";
-                    boolean result = userService.loginUser(userId, password);
-                    if (result) {
-                        body = HttpRequestUtils.getBody("/index.html");
-                        cookie = "logined=true";
-                    } else {
-                        body = HttpRequestUtils.getBody("/user/login_failed.html");
-                        cookie = "logined=false";
-                    }
-                    DataOutputStream dos = new DataOutputStream(out);
-                    responseCookie(dos, body.length, cookie);
-                    responseBody(dos, body);
-                } else if (url.startsWith("/user/list")) {
-                    Map<String, String> cookie = new HashMap<>();
-                    while ((line = br.readLine()) != null) {
-                        if (line.startsWith("Cookie")) {
-                            log.debug(line);
-                            cookie = HttpRequestUtils.parseCookies(HttpRequestUtils.parseHeader(line).getValue());
-                        }
-                        if (line.equals("")) {
-                            break;
-                        }
-                    }
-                    if (Boolean.parseBoolean(cookie.get("logined"))) {
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("<table>");
-                        sb.append("<tr>");
-                        sb.append("<th>아이디</th>");
-                        sb.append("<th>이름</th>");
-                        sb.append("<th>이메일</th>");
-                        sb.append("</tr>");
-                        userService.getUsers().forEach(user -> {
-                            sb.append("<tr>");
-                            sb.append("<td>").append(user.getUserId()).append("</td>");
-                            sb.append("<td>").append(user.getName()).append("</td>");
-                            sb.append("<td>").append(user.getName()).append("</td>");
-                            sb.append("</tr>");
-                        });
-                        sb.append("</table>");
-                        body = sb.toString().getBytes();
-                    } else {
-                        body = HttpRequestUtils.getBody("/user/login.html");
-                    }
-                    DataOutputStream dos = new DataOutputStream(out);
-                    response200Header(dos, body.length);
-                    responseBody(dos, body);
-                }
+            if (line == null) return;
+
+            String firstLine = line;
+
+            while (!"".equals(line)) {
+                log.debug("header : {}", line);
+                line = br.readLine();
             }
+
+            String path = HttpRequestUtils.getUrl(firstLine);
+            DataOutputStream dos = new DataOutputStream(out);
+            byte[] body = Files.readAllBytes(new File("./webapp" + path).toPath());;
+            response200Header(dos, body.length);
+            responseBody(dos, body);
+
+
+//            String url = HttpRequestUtils.getUrl(line);
+//            byte[] body;
+//            if (HttpRequestUtils.isHtml(url)) {
+//                body = HttpRequestUtils.getBody(url);
+//                DataOutputStream dos = new DataOutputStream(out);
+//                response200Header(dos, body.length);
+//                responseBody(dos, body);
+//            } else if (url.endsWith(".js")) {
+//                body = HttpRequestUtils.getBody(url);
+//                DataOutputStream dos = new DataOutputStream(out);
+//                response200Header(dos, body.length);
+//                responseBody(dos, body);
+//            } else if (url.endsWith(".css")) {
+//                body = HttpRequestUtils.getBody(url);
+//                DataOutputStream dos = new DataOutputStream(out);
+//                responseCss(dos, body.length);
+//                responseBody(dos, body);
+//            } else {
+//                if (url.startsWith("/user/create")) {
+//                    Map<String, String> params;
+//                    if (line.startsWith("GET")) {
+//                        params = HttpRequestUtils.getParams(url);
+//                    } else {
+//                        int contentLength = 0;
+//                        while ((line = br.readLine()) != null) {
+//                            if (line.startsWith("Content-Length")) {
+//                                contentLength = Integer.parseInt(HttpRequestUtils.parseHeader(line).getValue());
+//                            }
+//                            if (line.equals("")) {
+//                                break;
+//                            }
+//                        }
+//                        params = HttpRequestUtils.parseQueryString(IOUtils.readData(br, contentLength));
+//                    }
+//                    boolean result = userService.createUser(HttpRequestUtils.paramsToUser(params));
+//                    body = HttpRequestUtils.getBody("/index.html");
+//                    DataOutputStream dos = new DataOutputStream(out);
+//                    response302Header(dos, body.length);
+//                    responseBody(dos, body);
+//                } else if (url.startsWith("/user/login")) {
+//                    Map<String, String> params;
+//                    int contentLength = 0;
+//                    while ((line = br.readLine()) != null) {
+//                        if (line.startsWith("Content-Length")) {
+//                            contentLength = Integer.parseInt(HttpRequestUtils.parseHeader(line).getValue());
+//                        }
+//                        if (line.equals("")) {
+//                            break;
+//                        }
+//                    }
+//                    params = HttpRequestUtils.parseQueryString(IOUtils.readData(br, contentLength));
+//                    String userId = params.get("userId");
+//                    String password = params.get("password");
+//                    String cookie = "";
+//                    boolean result = userService.loginUser(userId, password);
+//                    if (result) {
+//                        body = HttpRequestUtils.getBody("/index.html");
+//                        cookie = "logined=true";
+//                    } else {
+//                        body = HttpRequestUtils.getBody("/user/login_failed.html");
+//                        cookie = "logined=false";
+//                    }
+//                    DataOutputStream dos = new DataOutputStream(out);
+//                    responseCookie(dos, body.length, cookie);
+//                    responseBody(dos, body);
+//                } else if (url.startsWith("/user/list")) {
+//                    Map<String, String> cookie = new HashMap<>();
+//                    while ((line = br.readLine()) != null) {
+//                        if (line.startsWith("Cookie")) {
+//                            log.debug(line);
+//                            cookie = HttpRequestUtils.parseCookies(HttpRequestUtils.parseHeader(line).getValue());
+//                        }
+//                        if (line.equals("")) {
+//                            break;
+//                        }
+//                    }
+//                    if (Boolean.parseBoolean(cookie.get("logined"))) {
+//                        StringBuilder sb = new StringBuilder();
+//                        sb.append("<table>");
+//                        sb.append("<tr>");
+//                        sb.append("<th>아이디</th>");
+//                        sb.append("<th>이름</th>");
+//                        sb.append("<th>이메일</th>");
+//                        sb.append("</tr>");
+//                        userService.getUsers().forEach(user -> {
+//                            sb.append("<tr>");
+//                            sb.append("<td>").append(user.getUserId()).append("</td>");
+//                            sb.append("<td>").append(user.getName()).append("</td>");
+//                            sb.append("<td>").append(user.getName()).append("</td>");
+//                            sb.append("</tr>");
+//                        });
+//                        sb.append("</table>");
+//                        body = sb.toString().getBytes();
+//                    } else {
+//                        body = HttpRequestUtils.getBody("/user/login.html");
+//                    }
+//                    DataOutputStream dos = new DataOutputStream(out);
+//                    response200Header(dos, body.length);
+//                    responseBody(dos, body);
+//                }
+//            }
         } catch (IOException e) {
             log.error(e.getMessage());
         }

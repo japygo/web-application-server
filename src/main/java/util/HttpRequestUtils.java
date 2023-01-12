@@ -1,18 +1,24 @@
 package util;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
+import com.google.common.base.Strings;
+import com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Strings;
-import com.google.common.collect.Maps;
-import model.User;
-
 public class HttpRequestUtils {
+    private static final Logger log = LoggerFactory.getLogger(HttpRequestUtils.class);
+
+    public static String getUrl(String firstLine) {
+        String[] splited = firstLine.split(" ");
+        String path = splited[1];
+        log.debug("request path : {}", path);
+        return path;
+    }
+
     /**
      * @param queryString
      *            URL에서 ? 이후에 전달되는 field1=value1&field2=value2 형식임
@@ -112,41 +118,41 @@ public class HttpRequestUtils {
         }
     }
 
-    public static String getUrl(String line) {
-        String url = "/index.html";
-        if (line != null) {
-            String[] tokens = line.split(" ");
-            if (tokens.length == 3) {
-                if (!tokens[1].equals("/")) {
-                    url = tokens[1];
-                }
-            }
-        }
-        return url;
-    }
-
-    public static byte[] getBody(String url) throws IOException {
-        return Files.readAllBytes(new File("./webapp" + url).toPath());
-    }
-
-    public static boolean isHtml(String url) {
-        return url.endsWith(".html");
-    }
-
-    public static Map<String, String> getParams(String url) {
-        Map<String, String> params = new HashMap<>();
-        String[] tokens = url.split("\\?");
-        if (tokens.length == 2) {
-            params = parseQueryString(tokens[1]);
-        }
-        return params;
-    }
-
-    public static User paramsToUser(Map<String, String> params) {
-        String userId = params.get("userId");
-        String password = params.get("password");
-        String name = params.get("name");
-        String email = params.get("email");
-        return new User(userId, password, name, email);
-    }
+//    public static String getUrl(String line) {
+//        String url = "/index.html";
+//        if (line != null) {
+//            String[] tokens = line.split(" ");
+//            if (tokens.length == 3) {
+//                if (!tokens[1].equals("/")) {
+//                    url = tokens[1];
+//                }
+//            }
+//        }
+//        return url;
+//    }
+//
+//    public static byte[] getBody(String url) throws IOException {
+//        return Files.readAllBytes(new File("./webapp" + url).toPath());
+//    }
+//
+//    public static boolean isHtml(String url) {
+//        return url.endsWith(".html");
+//    }
+//
+//    public static Map<String, String> getParams(String url) {
+//        Map<String, String> params = new HashMap<>();
+//        String[] tokens = url.split("\\?");
+//        if (tokens.length == 2) {
+//            params = parseQueryString(tokens[1]);
+//        }
+//        return params;
+//    }
+//
+//    public static User paramsToUser(Map<String, String> params) {
+//        String userId = params.get("userId");
+//        String password = params.get("password");
+//        String name = params.get("name");
+//        String email = params.get("email");
+//        return new User(userId, password, name, email);
+//    }
 }
