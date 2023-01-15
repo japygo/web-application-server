@@ -19,6 +19,11 @@ public class HttpRequestUtils {
         return path;
     }
 
+    public static int getContentLength(String line) {
+        String[] headerTokens = line.split(":");
+        return Integer.parseInt(headerTokens[1].trim());
+    }
+
     /**
      * @param queryString
      *            URL에서 ? 이후에 전달되는 field1=value1&field2=value2 형식임

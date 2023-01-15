@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.UserService;
 import util.HttpRequestUtils;
+import util.IOUtils;
 
 import java.io.*;
 import java.net.Socket;
@@ -33,25 +34,33 @@ public class RequestHandler extends Thread {
             if (line == null) return;
 
             String firstLine = line;
+            String url = HttpRequestUtils.getUrl(firstLine);
+            int contentLength = 0;
 
             while (!"".equals(line)) {
                 log.debug("header : {}", line);
                 line = br.readLine();
+                if (line.contains("Content-Length")) {
+                    contentLength = HttpRequestUtils.getContentLength(line);
+                }
             }
 
-            String path = HttpRequestUtils.getUrl(firstLine);
-            if (path.startsWith("/user/create")) {
-                int index = path.indexOf("?");
-                String queryString = path.substring(index + 1);
-                Map<String, String> params = HttpRequestUtils.parseQueryString(queryString);
+            log.debug("Content-Length : {}", contentLength);
+
+            if (url.startsWith("/user/create")) {
+                String requestBody = IOUtils.readData(br, contentLength);
+                log.debug("Request Body : {}", requestBody);
+                Map<String, String> params = HttpRequestUtils.parseQueryString(requestBody);
                 User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
                 log.debug("User : {}", user);
-            } else {
-                DataOutputStream dos = new DataOutputStream(out);
-                byte[] body = Files.readAllBytes(new File("./webapp" + path).toPath());;
-                response200Header(dos, body.length);
-                responseBody(dos, body);
+
+                url = "/index.html";
             }
+
+            DataOutputStream dos = new DataOutputStream(out);
+            byte[] body = Files.readAllBytes(new File("./webapp" + url).toPath());
+            response200Header(dos, body.length);
+            responseBody(dos, body);
 
 
 //            String url = HttpRequestUtils.getUrl(line);
