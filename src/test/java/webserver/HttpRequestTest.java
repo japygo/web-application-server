@@ -2,18 +2,21 @@ package webserver;
 
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.nio.file.Files;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class HttpRequestTest {
-    private final String testDirectory = "./src/test/resources/";
-
     @Test
     public void request_GET() throws Exception {
-        InputStream in = Files.newInputStream(new File(testDirectory + "Http_GET.txt").toPath());
+        StringBuilder sb = new StringBuilder();
+        sb.append("GET /user/create?userId=javajigi&password=password&name=JaeSung HTTP/1.1\r\n");
+        sb.append("HOST: localhost:8080\r\n");
+        sb.append("Connection: keep-alive\r\n");
+        sb.append("Accept: */*\r\n");
+        sb.append("\r\n");
+        InputStream in = new ByteArrayInputStream(sb.toString().getBytes());
         HttpRequest request = new HttpRequest(in);
 
         assertThat(request.getMethod()).isEqualTo("GET");
@@ -24,7 +27,16 @@ public class HttpRequestTest {
 
     @Test
     public void request_POST() throws Exception {
-        InputStream in = Files.newInputStream(new File(testDirectory + "Http_POST.txt").toPath());
+        StringBuilder sb = new StringBuilder();
+        sb.append("POST /user/create HTTP/1.1\r\n");
+        sb.append("Host: localhost:8080\r\n");
+        sb.append("Connection: keep-alive\r\n");
+        sb.append("Content-Length: 46\r\n");
+        sb.append("Content-Type: application/x-www-form-urlencoded\r\n");
+        sb.append("Accept: */*\r\n");
+        sb.append("\r\n");
+        sb.append("userId=javajigi&password=password&name=JaeSung");
+        InputStream in = new ByteArrayInputStream(sb.toString().getBytes());
         HttpRequest request = new HttpRequest(in);
 
         assertThat(request.getMethod()).isEqualTo("POST");

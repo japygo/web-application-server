@@ -50,7 +50,7 @@ public class HttpRequest {
                 this.parameter = HttpRequestUtils.parseQueryString(requestBody);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
         log.debug("method : {}, path : {}, header : {}, parameter : {}", method, path, header, parameter);
     }
