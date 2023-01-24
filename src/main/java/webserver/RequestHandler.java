@@ -6,11 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.UserService;
 import util.HttpRequestUtils;
-import util.IOUtils;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Map;
@@ -31,33 +29,13 @@ public class RequestHandler extends Thread {
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
-            BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-            String line = br.readLine();
-            if (line == null) return;
-
-            String firstLine = line;
-            String url = HttpRequestUtils.getUrl(firstLine);
-            int contentLength = 0;
-            boolean logined = false;
-
-            while (!"".equals(line)) {
-                log.debug("header : {}", line);
-                line = br.readLine();
-                if (line.contains("Content-Length")) {
-                    contentLength = HttpRequestUtils.getContentLength(line);
-                }
-                if (line.contains("Cookie")) {
-                    logined = HttpRequestUtils.isLogined(line);
-                }
-            }
-
-            log.debug("Content-Length : {}", contentLength);
+            HttpRequest request = new HttpRequest(in);
+            String url = request.getPath();
+            Map<String, String> cookies = HttpRequestUtils.parseCookies(request.getHeader("Cookie"));
+            boolean logined = Boolean.parseBoolean(cookies.get("logined"));
 
             if (url.equals("/user/create")) {
-                String requestBody = IOUtils.readData(br, contentLength);
-                log.debug("Request Body : {}", requestBody);
-                Map<String, String> params = HttpRequestUtils.parseQueryString(requestBody);
-                User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
+                User user = new User(request.getParameter("userId"), request.getParameter("password"), request.getParameter("name"), request.getParameter("email"));
                 log.debug("User : {}", user);
                 DataBase.addUser(user);
 
@@ -65,12 +43,8 @@ public class RequestHandler extends Thread {
                 DataOutputStream dos = new DataOutputStream(out);
                 response302Header(dos, url);
             } else if (url.equals("/user/login")) {
-                String requestBody = IOUtils.readData(br, contentLength);
-                log.debug("Request Body : {}", requestBody);
-                Map<String, String> params = HttpRequestUtils.parseQueryString(requestBody);
-
-                String userId = params.get("userId");
-                String password = params.get("password");
+                String userId = request.getParameter("userId");
+                String password = request.getParameter("password");
                 log.debug("userId : {}, password : {}", userId, password);
 
                 User user = DataBase.findUserById(userId);
@@ -121,6 +95,9 @@ public class RequestHandler extends Thread {
                 response200CssHeader(dos, body.length);
                 responseBody(dos, body);
             } else {
+                if ("/".equals(url)) {
+                    url = "/index.html";
+                }
                 responseResource(out, url);
             }
 

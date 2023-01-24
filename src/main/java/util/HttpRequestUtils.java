@@ -12,6 +12,13 @@ import java.util.stream.Collectors;
 public class HttpRequestUtils {
     private static final Logger log = LoggerFactory.getLogger(HttpRequestUtils.class);
 
+    public static String getMethod(String firstLine) {
+        String[] splited = firstLine.split(" ");
+        String method = splited[0];
+        log.debug("method : {}", method);
+        return method;
+    }
+
     public static String getUrl(String firstLine) {
         String[] splited = firstLine.split(" ");
         String path = splited[1];
