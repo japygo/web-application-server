@@ -5,6 +5,9 @@ import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -152,11 +155,11 @@ public class HttpRequestUtils {
 //        }
 //        return url;
 //    }
-//
-//    public static byte[] getBody(String url) throws IOException {
-//        return Files.readAllBytes(new File("./webapp" + url).toPath());
-//    }
-//
+
+    public static byte[] getBody(String url) throws IOException {
+        return Files.readAllBytes(new File("./webapp" + url).toPath());
+    }
+
 //    public static boolean isHtml(String url) {
 //        return url.endsWith(".html");
 //    }

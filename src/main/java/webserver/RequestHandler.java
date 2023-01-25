@@ -34,14 +34,15 @@ public class RequestHandler extends Thread {
             Map<String, String> cookies = HttpRequestUtils.parseCookies(request.getHeader("Cookie"));
             boolean logined = Boolean.parseBoolean(cookies.get("logined"));
 
+            HttpResponse response = new HttpResponse(out);
+
             if (url.equals("/user/create")) {
                 User user = new User(request.getParameter("userId"), request.getParameter("password"), request.getParameter("name"), request.getParameter("email"));
                 log.debug("User : {}", user);
                 DataBase.addUser(user);
 
                 url = "/index.html";
-                DataOutputStream dos = new DataOutputStream(out);
-                response302Header(dos, url);
+                response.sendRedirect(url);
             } else if (url.equals("/user/login")) {
                 String userId = request.getParameter("userId");
                 String password = request.getParameter("password");
@@ -51,27 +52,27 @@ public class RequestHandler extends Thread {
                 if (user == null) {
                     log.debug("User Not Found!");
                     url = "/user/login_failed.html";
-                    DataOutputStream dos = new DataOutputStream(out);
-                    response302HeaderWithCookie(dos, url, "logined=false");
+                    response.addHeader("Set-Cookie", "logined=false");
+                    response.sendRedirect(url);
                     return;
                 }
 
                 if (user.getPassword().equals(password)) {
                     log.debug("Login Success!");
                     url = "/index.html";
-                    DataOutputStream dos = new DataOutputStream(out);
-                    response302HeaderWithCookie(dos, url, "logined=true");
+                    response.addHeader("Set-Cookie", "logined=true");
+                    response.sendRedirect(url);
                 } else {
                     log.debug("Password Mismatch!");
                     url = "/user/login_failed.html";
-                    DataOutputStream dos = new DataOutputStream(out);
-                    response302HeaderWithCookie(dos, url, "logined=false");
+                    response.addHeader("Set-Cookie", "logined=false");
+                    response.sendRedirect(url);
                 }
             } else if (url.equals("/user/list")) {
                 if (!logined) {
                     url = "/user/login.html";
-                    DataOutputStream dos = new DataOutputStream(out);
-                    response302HeaderWithCookie(dos, url, "logined=false");
+                    response.addHeader("Set-Cookie", "logined=false");
+                    response.sendRedirect(url);
                     return;
                 }
                 Collection<User> users = DataBase.findAll();
@@ -89,16 +90,8 @@ public class RequestHandler extends Thread {
                 DataOutputStream dos = new DataOutputStream(out);
                 response200Header(dos, body.length);
                 responseBody(dos, body);
-            } else if (url.endsWith(".css")) {
-                DataOutputStream dos = new DataOutputStream(out);
-                byte[] body = Files.readAllBytes(new File("./webapp" + url).toPath());
-                response200CssHeader(dos, body.length);
-                responseBody(dos, body);
             } else {
-                if ("/".equals(url)) {
-                    url = "/index.html";
-                }
-                responseResource(out, url);
+                response.forward(url);
             }
 
 
