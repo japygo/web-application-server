@@ -23,7 +23,18 @@ public class HttpResponse {
         try {
             responseHeader(200);
             processHeaders();
-            forwardBody(path);
+            if (path.endsWith(".css")) {
+                dos.writeBytes("Content-Type: text/css\r\n");
+            } else {
+                dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+            }
+            if ("/".equals(path)) {
+                path = "/index.html";
+            }
+            byte[] body = HttpRequestUtils.getBody(path);
+            dos.writeBytes("Content-Length: " + body.length + "\r\n");
+            dos.writeBytes("\r\n");
+            responseBody(body);
         } catch (IOException e) {
             log.error(e.getMessage());
         }
@@ -78,18 +89,16 @@ public class HttpResponse {
         }
     }
 
-    private void forwardBody(String path) throws IOException {
-        if (path.endsWith(".css")) {
-            dos.writeBytes("Content-Type: text/css\r\n");
-        } else {
-            dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+    public void forwardBody(String data) {
+        try {
+            responseHeader(200);
+            processHeaders();
+            byte[] body = data.getBytes();
+            dos.writeBytes("Content-Length: " + body.length + "\r\n");
+            dos.writeBytes("\r\n");
+            responseBody(body);
+        } catch (IOException e) {
+            log.error(e.getMessage());
         }
-        if ("/".equals(path)) {
-            path = "/index.html";
-        }
-        byte[] body = HttpRequestUtils.getBody(path);
-        dos.writeBytes("Content-Length: " + body.length + "\r\n");
-        dos.writeBytes("\r\n");
-        responseBody(body);
     }
 }

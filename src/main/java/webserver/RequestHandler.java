@@ -1,16 +1,17 @@
 package webserver;
 
-import db.DataBase;
-import model.User;
+import controller.Controller;
+import controller.CreateUserController;
+import controller.ListUserController;
+import controller.LoginController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import service.UserService;
-import util.HttpRequestUtils;
 
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 public class RequestHandler extends Thread {
@@ -30,69 +31,80 @@ public class RequestHandler extends Thread {
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
             HttpRequest request = new HttpRequest(in);
-            String url = request.getPath();
-            Map<String, String> cookies = HttpRequestUtils.parseCookies(request.getHeader("Cookie"));
-            boolean logined = Boolean.parseBoolean(cookies.get("logined"));
+            String path = request.getPath();
 
             HttpResponse response = new HttpResponse(out);
 
-            if (url.equals("/user/create")) {
-                User user = new User(request.getParameter("userId"), request.getParameter("password"), request.getParameter("name"), request.getParameter("email"));
-                log.debug("User : {}", user);
-                DataBase.addUser(user);
+            Controller createUserController = new CreateUserController();
+            Controller loginController = new LoginController();
+            Controller listUserController = new ListUserController();
 
-                url = "/index.html";
-                response.sendRedirect(url);
-            } else if (url.equals("/user/login")) {
-                String userId = request.getParameter("userId");
-                String password = request.getParameter("password");
-                log.debug("userId : {}, password : {}", userId, password);
+            Map<String, Controller> controllerMap = new HashMap<>();
+            controllerMap.put("/user/create", createUserController);
+            controllerMap.put("/user/login", loginController);
+            controllerMap.put("/user/list", listUserController);
 
-                User user = DataBase.findUserById(userId);
-                if (user == null) {
-                    log.debug("User Not Found!");
-                    url = "/user/login_failed.html";
-                    response.addHeader("Set-Cookie", "logined=false");
-                    response.sendRedirect(url);
-                    return;
-                }
-
-                if (user.getPassword().equals(password)) {
-                    log.debug("Login Success!");
-                    url = "/index.html";
-                    response.addHeader("Set-Cookie", "logined=true");
-                    response.sendRedirect(url);
-                } else {
-                    log.debug("Password Mismatch!");
-                    url = "/user/login_failed.html";
-                    response.addHeader("Set-Cookie", "logined=false");
-                    response.sendRedirect(url);
-                }
-            } else if (url.equals("/user/list")) {
-                if (!logined) {
-                    url = "/user/login.html";
-                    response.addHeader("Set-Cookie", "logined=false");
-                    response.sendRedirect(url);
-                    return;
-                }
-                Collection<User> users = DataBase.findAll();
-                StringBuilder sb = new StringBuilder();
-                sb.append("<table border='1'>");
-                for (User user : users) {
-                    sb.append("<tr>");
-                    sb.append("<td>" + user.getUserId() + "</td>");
-                    sb.append("<td>" + user.getName() + "</td>");
-                    sb.append("<td>" + user.getEmail() + "</td>");
-                    sb.append("</tr>");
-                }
-                sb.append("</table>");
-                byte[] body = sb.toString().getBytes();
-                DataOutputStream dos = new DataOutputStream(out);
-                response200Header(dos, body.length);
-                responseBody(dos, body);
+            Controller controller = controllerMap.get(path);
+            if (controller != null) {
+                controller.service(request, response);
             } else {
-                response.forward(url);
+                response.forward(path);
             }
+
+//            if (url.equals("/user/create")) {
+//                User user = new User(request.getParameter("userId"), request.getParameter("password"), request.getParameter("name"), request.getParameter("email"));
+//                log.debug("User : {}", user);
+//                DataBase.addUser(user);
+//
+//                url = "/index.html";
+//                response.sendRedirect(url);
+//            } else if (url.equals("/user/login")) {
+//                String userId = request.getParameter("userId");
+//                String password = request.getParameter("password");
+//                log.debug("userId : {}, password : {}", userId, password);
+//
+//                User user = DataBase.findUserById(userId);
+//                if (user == null) {
+//                    log.debug("User Not Found!");
+//                    url = "/user/login_failed.html";
+//                    response.addHeader("Set-Cookie", "logined=false");
+//                    response.sendRedirect(url);
+//                    return;
+//                }
+//
+//                if (user.getPassword().equals(password)) {
+//                    log.debug("Login Success!");
+//                    url = "/index.html";
+//                    response.addHeader("Set-Cookie", "logined=true");
+//                    response.sendRedirect(url);
+//                } else {
+//                    log.debug("Password Mismatch!");
+//                    url = "/user/login_failed.html";
+//                    response.addHeader("Set-Cookie", "logined=false");
+//                    response.sendRedirect(url);
+//                }
+//            } else if (url.equals("/user/list")) {
+//                if (!logined) {
+//                    url = "/user/login.html";
+//                    response.addHeader("Set-Cookie", "logined=false");
+//                    response.sendRedirect(url);
+//                    return;
+//                }
+//                Collection<User> users = DataBase.findAll();
+//                StringBuilder sb = new StringBuilder();
+//                sb.append("<table border='1'>");
+//                for (User user : users) {
+//                    sb.append("<tr>");
+//                    sb.append("<td>" + user.getUserId() + "</td>");
+//                    sb.append("<td>" + user.getName() + "</td>");
+//                    sb.append("<td>" + user.getEmail() + "</td>");
+//                    sb.append("</tr>");
+//                }
+//                sb.append("</table>");
+//                response.forwardBody(sb.toString());
+//            } else {
+//                response.forward(url);
+//            }
 
 
 //            String url = HttpRequestUtils.getUrl(line);
