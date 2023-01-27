@@ -1,4 +1,4 @@
-package webserver;
+package http;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,9 +27,6 @@ public class HttpResponse {
                 dos.writeBytes("Content-Type: text/css\r\n");
             } else {
                 dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
-            }
-            if ("/".equals(path)) {
-                path = "/index.html";
             }
             byte[] body = HttpRequestUtils.getBody(path);
             dos.writeBytes("Content-Length: " + body.length + "\r\n");

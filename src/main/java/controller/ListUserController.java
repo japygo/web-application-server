@@ -1,23 +1,20 @@
 package controller;
 
 import db.DataBase;
+import http.HttpRequest;
+import http.HttpResponse;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import util.HttpRequestUtils;
-import webserver.HttpRequest;
-import webserver.HttpResponse;
 
 import java.util.Collection;
-import java.util.Map;
 
 public class ListUserController extends AbstractController {
     private static final Logger log = LoggerFactory.getLogger(ListUserController.class);
 
     @Override
     public void doGet(HttpRequest request, HttpResponse response) {
-        Map<String, String> cookies = HttpRequestUtils.parseCookies(request.getHeader("Cookie"));
-        if (!isLogin(cookies.get("logined"))) {
+        if (!isLogin(request.getCookie("logined"))) {
             response.addHeader("Set-Cookie", "logined=false");
             response.sendRedirect("/user/login.html");
             return;

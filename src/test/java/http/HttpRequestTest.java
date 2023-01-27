@@ -1,4 +1,4 @@
-package webserver;
+package http;
 
 import org.junit.jupiter.api.Test;
 
@@ -15,14 +15,16 @@ public class HttpRequestTest {
         sb.append("HOST: localhost:8080\r\n");
         sb.append("Connection: keep-alive\r\n");
         sb.append("Accept: */*\r\n");
+        sb.append("Cookie: logined=false\r\n");
         sb.append("\r\n");
         InputStream in = new ByteArrayInputStream(sb.toString().getBytes());
         HttpRequest request = new HttpRequest(in);
 
-        assertThat(request.getMethod()).isEqualTo("GET");
+        assertThat(request.getMethod()).isEqualTo(HttpMethod.GET);
         assertThat(request.getPath()).isEqualTo("/user/create");
         assertThat(request.getHeader("Connection")).isEqualTo("keep-alive");
         assertThat(request.getParameter("userId")).isEqualTo("javajigi");
+        assertThat(request.getCookie("logined")).isEqualTo("false");
     }
 
     @Test
@@ -39,7 +41,7 @@ public class HttpRequestTest {
         InputStream in = new ByteArrayInputStream(sb.toString().getBytes());
         HttpRequest request = new HttpRequest(in);
 
-        assertThat(request.getMethod()).isEqualTo("POST");
+        assertThat(request.getMethod()).isEqualTo(HttpMethod.POST);
         assertThat(request.getPath()).isEqualTo("/user/create");
         assertThat(request.getHeader("Connection")).isEqualTo("keep-alive");
         assertThat(request.getParameter("userId")).isEqualTo("javajigi");

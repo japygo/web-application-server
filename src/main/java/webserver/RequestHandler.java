@@ -4,9 +4,10 @@ import controller.Controller;
 import controller.CreateUserController;
 import controller.ListUserController;
 import controller.LoginController;
+import http.HttpRequest;
+import http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import service.UserService;
 
 import java.io.*;
 import java.net.Socket;
@@ -16,7 +17,6 @@ import java.util.Map;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
-    private static final UserService userService = new UserService();
 
     private final Socket connection;
 
@@ -31,7 +31,7 @@ public class RequestHandler extends Thread {
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
             HttpRequest request = new HttpRequest(in);
-            String path = request.getPath();
+            String path = getDefaultPath(request.getPath());
 
             HttpResponse response = new HttpResponse(out);
 
@@ -211,6 +211,13 @@ public class RequestHandler extends Thread {
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private String getDefaultPath(String path) {
+        if ("/".equals(path)) {
+            return "/index.html";
+        }
+        return path;
     }
 
     private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {

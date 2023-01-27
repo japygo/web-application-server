@@ -1,4 +1,4 @@
-package webserver;
+package http;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,60 +14,61 @@ import java.util.Map;
 
 public class HttpRequest {
     private static final Logger log = LoggerFactory.getLogger(HttpRequest.class);
-    private String method = null;
-    private String path = null;
-    private Map<String, String> header = new HashMap<>();
-    private Map<String, String> parameter = new HashMap<>();
+    private Map<String, String> headers = new HashMap<>();
+    private Map<String, String> parameters = new HashMap<>();
+    private Map<String, String> cookies = new HashMap<>();
+    private RequestLine requestLine;
 
     public HttpRequest(InputStream in) {
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
             String line = br.readLine();
-            if (line == null) throw new Exception();
-            this.method = HttpRequestUtils.getMethod(line);
-            this.path = HttpRequestUtils.getUrl(line);
+            if (line == null) return;
+
+            requestLine = new RequestLine(line);
+
             while (line != null && !"".equals(line)) {
                 line = br.readLine();
                 log.debug("header : {}", line);
                 if (line != null && !"".equals(line)) {
                     String[] headerTokens = line.split(":");
                     if (headerTokens.length == 2) {
-                        header.put(headerTokens[0].trim(), headerTokens[1].trim());
+                        headers.put(headerTokens[0].trim(), headerTokens[1].trim());
                     }
                 }
             }
-            if ("GET".equals(method)) {
-                if (path.contains("?")) {
-                    String[] pathTokens = this.path.split("\\?");
-                    if (pathTokens.length == 2) {
-                        this.path = pathTokens[0];
-                        this.parameter = HttpRequestUtils.parseQueryString(pathTokens[1]);
-                    }
-                }
-            }
-            if ("POST".equals(method)) {
+
+            cookies = HttpRequestUtils.parseCookies(getHeader("Cookie"));
+
+            if (getMethod().isPost()) {
                 String requestBody = IOUtils.readData(br, Integer.parseInt(getHeader("Content-Length")));
-                this.parameter = HttpRequestUtils.parseQueryString(requestBody);
+                this.parameters = HttpRequestUtils.parseQueryString(requestBody);
+            } else {
+                this.parameters = requestLine.getParams();
             }
         } catch (Exception e) {
             log.error(e.getMessage());
         }
-        log.debug("method : {}, path : {}, header : {}, parameter : {}", method, path, header, parameter);
+        log.debug("method : {}, path : {}, header : {}, parameter : {}", getMethod(), getPath(), headers, parameters);
     }
 
-    public String getMethod() {
-        return method;
+    public HttpMethod getMethod() {
+        return requestLine.getMethod();
     }
 
     public String getPath() {
-        return path;
+        return requestLine.getPath();
     }
 
     public String getHeader(String key) {
-        return header.get(key);
+        return headers.get(key);
     }
 
     public String getParameter(String key) {
-        return parameter.get(key);
+        return parameters.get(key);
+    }
+
+    public String getCookie(String key) {
+        return cookies.get(key);
     }
 }
