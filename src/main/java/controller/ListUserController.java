@@ -15,7 +15,7 @@ public class ListUserController extends AbstractController {
     @Override
     public void doGet(HttpRequest request, HttpResponse response) {
         if (!isLogin(request.getCookie("logined"))) {
-            response.addHeader("Set-Cookie", "logined=false");
+            response.addHeader(HttpResponse.SET_COOKIE, "logined=false");
             response.sendRedirect("/user/login.html");
             return;
         }

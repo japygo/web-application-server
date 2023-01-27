@@ -19,18 +19,18 @@ public class LoginController extends AbstractController {
         User user = DataBase.findUserById(userId);
         if (user == null) {
             log.debug("User Not Found!");
-            response.addHeader("Set-Cookie", "logined=false");
+            response.addHeader(HttpResponse.SET_COOKIE, "logined=false");
             response.sendRedirect("/user/login_failed.html");
             return;
         }
 
-        if (user.getPassword().equals(password)) {
+        if (user.login(password)) {
             log.debug("Login Success!");
-            response.addHeader("Set-Cookie", "logined=true");
+            response.addHeader(HttpResponse.SET_COOKIE, "logined=true");
             response.sendRedirect("/index.html");
         } else {
             log.debug("Password Mismatch!");
-            response.addHeader("Set-Cookie", "logined=false");
+            response.addHeader(HttpResponse.SET_COOKIE, "logined=false");
             response.sendRedirect("/user/login_failed.html");
         }
     }

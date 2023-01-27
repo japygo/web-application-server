@@ -6,7 +6,7 @@ import http.HttpResponse;
 public abstract class AbstractController implements Controller {
     @Override
     public void service(HttpRequest request, HttpResponse response) {
-        if ("POST".equals(request.getMethod())) {
+        if (request.getMethod().isPost()) {
             doPost(request, response);
         } else {
             doGet(request, response);

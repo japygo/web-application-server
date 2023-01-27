@@ -1,6 +1,5 @@
 package http;
 
-import http.HttpResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +34,8 @@ public class HttpResponseTest {
 
         String result = out.toString();
         assertThat(result).contains("<title>SLiPP Java Web Programming</title>")
-                .contains("Content-Length: 10276");
+                .contains("Content-Length: 10276")
+                .contains("text/html;charset=utf-8");
     }
 
     @Test
@@ -51,7 +51,7 @@ public class HttpResponseTest {
     @Test
     public void responseCookies() throws Exception {
         HttpResponse response = new HttpResponse(out);
-        response.addHeader("Set-Cookie", "logined=true");
+        response.addHeader(HttpResponse.SET_COOKIE, "logined=true");
         response.sendRedirect("/index.html");
 
         String result = out.toString();
