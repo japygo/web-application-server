@@ -1,19 +1,15 @@
 package webserver;
 
 import controller.Controller;
-import controller.CreateUserController;
-import controller.ListUserController;
-import controller.LoginController;
 import http.HttpRequest;
 import http.HttpResponse;
+import http.RequestMapping;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.Map;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -31,20 +27,10 @@ public class RequestHandler extends Thread {
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
             HttpRequest request = new HttpRequest(in);
-            String path = getDefaultPath(request.getPath());
-
             HttpResponse response = new HttpResponse(out);
 
-            Controller createUserController = new CreateUserController();
-            Controller loginController = new LoginController();
-            Controller listUserController = new ListUserController();
-
-            Map<String, Controller> controllerMap = new HashMap<>();
-            controllerMap.put("/user/create", createUserController);
-            controllerMap.put("/user/login", loginController);
-            controllerMap.put("/user/list", listUserController);
-
-            Controller controller = controllerMap.get(path);
+            String path = getDefaultPath(request.getPath());
+            Controller controller = RequestMapping.getController(path);
             if (controller != null) {
                 controller.service(request, response);
             } else {
