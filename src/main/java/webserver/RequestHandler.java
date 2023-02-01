@@ -1,9 +1,7 @@
 package webserver;
 
 import controller.Controller;
-import http.HttpRequest;
-import http.HttpResponse;
-import http.RequestMapping;
+import http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +26,11 @@ public class RequestHandler extends Thread {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
             HttpRequest request = new HttpRequest(in);
             HttpResponse response = new HttpResponse(out);
+
+            if (request.getCookie(HttpSessions.SESSION_ID) == null) {
+                HttpSession session = request.getSession();
+                response.addHeader(HttpResponse.SET_COOKIE, HttpSessions.SESSION_ID + "=" + session.getId());
+            }
 
             String path = getDefaultPath(request.getPath());
             Controller controller = RequestMapping.getController(path);

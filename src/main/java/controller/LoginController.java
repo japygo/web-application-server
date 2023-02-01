@@ -1,6 +1,7 @@
 package controller;
 
 import db.DataBase;
+import http.HttpSession;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,18 +20,17 @@ public class LoginController extends AbstractController {
         User user = DataBase.findUserById(userId);
         if (user == null) {
             log.debug("User Not Found!");
-            response.addHeader(HttpResponse.SET_COOKIE, "logined=false");
             response.sendRedirect("/user/login_failed.html");
             return;
         }
 
         if (user.login(password)) {
             log.debug("Login Success!");
-            response.addHeader(HttpResponse.SET_COOKIE, "logined=true");
+            HttpSession session = request.getSession();
+            session.setAttribute("user", user);
             response.sendRedirect("/index.html");
         } else {
             log.debug("Password Mismatch!");
-            response.addHeader(HttpResponse.SET_COOKIE, "logined=false");
             response.sendRedirect("/user/login_failed.html");
         }
     }

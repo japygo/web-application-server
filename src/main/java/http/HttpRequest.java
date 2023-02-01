@@ -71,4 +71,8 @@ public class HttpRequest {
     public String getCookie(String key) {
         return cookies.get(key);
     }
+
+    public HttpSession getSession() {
+        return HttpSessions.getSession(getCookie(HttpSessions.SESSION_ID));
+    }
 }
